@@ -1,4 +1,20 @@
 // Relationship-aware person browser. No map movement is required to follow a relative.
+// Restore links using individual FAMC references when family CHIL entries are incomplete.
+const priorGEDParser=parseGED;
+parseGED=function(text){
+ const tree=priorGEDParser(text);let individualId=null;
+ for(const line of text.split(/\r?\n/)){
+   const root=line.match(/^0\s+(@[^@]+@)\s+INDI\b/);
+   if(root){individualId=root[1];continue}
+   if(/^0\s/.test(line)){individualId=null;continue}
+   const familyRef=line.match(/^1\s+FAMC\s+(@[^@]+@)/);
+   if(individualId&&familyRef){
+     const family=tree.fam[familyRef[1]];
+     if(family&&!family.children.includes(individualId))family.children.push(individualId);
+   }
+ }
+ return tree;
+};
 const previousGedConverter=gedToPeople;
 gedToPeople=function(anchorId){
  const result=previousGedConverter(anchorId),byId=new Map(result.map(p=>[p.id,p]));
@@ -28,6 +44,9 @@ function showPerson(id,push=true){
  activePersonId=person.id;drawer.classList.add('open');$('drawerBack').disabled=!personHistory.length;$('drawerBack').style.opacity=personHistory.length?'1':'.45';
  $('drawerTrail').textContent=personHistory.length?`${personHistory.length} step${personHistory.length===1?'':'s'} from the map`:'Selected family member';
  $('familyDrawerBody').innerHTML=`<div class="eyebrow">${esc(person.branch||'Family member')}</div><h2>${esc(person.name)}</h2><span class="relation-tag">${esc(displayedRelation(person))}</span><div class="info-card"><label>${esc(locationType(person))}</label><b>${esc(person.location||'Unknown')}</b>${person.locationSource==='estimated'?`<p>⚠ ${esc(person.locationNote||'Inferred from a related person; not verified.')}</p>`:''}</div><div class="info-card"><label>Generation</label><b>${esc(fmtGen(Number(person.generation)||0))}</b>${person.birth?`<p>Born: ${esc(person.birth)}</p>`:''}${person.death?`<p>Died: ${esc(person.death)}</p>`:''}</div><div class="drawer-actions"><button type="button" id="showOnMap">⌖ Centre map here</button><button type="button" id="copyPerson">Copy name</button></div>${relationSection('Spouse / partner',person.spouseIds)}${relationSection('Parents',person.parentIds)}${relationSection('Children',person.childIds)}`;
+ if(!Array.isArray(person.parentIds)||!Array.isArray(person.childIds)){
+   $('familyDrawerBody').insertAdjacentHTML('afterbegin','<div class="notice">⚠ This saved record predates family-link import. Please re-import the original GEDCOM to restore parents and children.</div>');
+ }
  $('showOnMap').onclick=()=>{if(isMappable(person)){map.panTo([Number(person.lat),Number(person.lng)],{animate:true});drawer.classList.remove('open')}else alert('No mapped location is available for this person.')};
  $('copyPerson').onclick=async()=>{try{await navigator.clipboard.writeText(person.name);$('copyPerson').textContent='Copied!'}catch{$('copyPerson').textContent=person.name}};
 }
