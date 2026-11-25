@@ -30,7 +30,7 @@ geocodeAll=async function(items){
  const unresolved=[];
  for(const p of items){
   if(p.lat!==''&&p.lat!=null&&p.lng!==''&&p.lng!=null)continue;
-  const place=String(p.location||'').trim();if(!place)continue;
+  const place=String(p.mapFullLocation||p.fullLocation||p.location||'').trim();if(!place)continue;
   const key=place.toLowerCase().replace(/\s+/g,' ');
   if(cache[key]?.length===2){[p.lat,p.lng]=cache[key];continue}
   const segments=place.split(',').map(normalizeCity).filter(Boolean),city=segments[0];
