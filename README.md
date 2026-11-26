@@ -2,7 +2,7 @@
 
 A static, client-side family-history map. No backend, database, account login, or build command is required.
 
-## Publish on GitHub Pages
+## Publish on GitHub Pages -
 
 1. Create a GitHub repository, for example `ancestral-atlas`.
 2. Upload **all the files and folders in this directory** to the repository root. Keep `index.html`, JavaScript, CSS, JSON, and the `images/` folder together.
